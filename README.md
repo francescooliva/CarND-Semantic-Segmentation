@@ -2,6 +2,26 @@
 ### Introduction
 In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
+## SPECIFICATIONS MET
+
+The function load_vgg is implemented correctly.  
+
+The function layers is implemented correctly.  
+
+The function optimize is implemented correctly.  
+
+The function train_nn is implemented correctly. The loss of the network should be printed while the network is training.  
+
+
+### Neural Network Setup And Building
+
+### Neural Network Training
+
+
+
+
+# Semantic Segmentation Instructions
+
 ### Setup
 ##### Frameworks and Packages
 Make sure you have the following is installed:
