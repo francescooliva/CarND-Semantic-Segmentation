@@ -54,7 +54,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     output = tf.layers.conv2d_transpose(conv_1x1, num_classes, 4, 2, padding = 'same',
                                         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    
+
     return output
 tests.test_layers(layers)
 
@@ -94,18 +94,19 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
-    # TODO: Implement function
-   for epoch in epochs:
-       for image, label in get_batches_fn(batch_size):
-           # Training 
-           print("Training...")
-           print()
-           sess.run(tf.global_variables_initializer())
-           for i in range(epochs):
-               for image, label in get_batches_fn(batch_size):
-                   sess.run([train_op, cross_entropy_loss], 
-                               feed_dict={input_image: image, correct_label: label, keep_prob: 0.6})                               keep_prob: 0.5, learning_rate: 0.0009})
     
+    # Training
+    print("Training...")
+    print()
+    sess.run(tf.global_variables_initializer())
+
+    # TODO: Implement function
+   for epoch in range(epochs):
+       for image, label in get_batches_fn(batch_size):
+           sess.run([train_op, cross_entropy_loss],
+                    feed_dict={input_image: image, correct_label: label, 
+                               keep_prob: 0.6, learning_rate: 0.001)}
+
 tests.test_train_nn(train_nn)
 
 
@@ -135,9 +136,9 @@ def run():
 
         # Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess, vgg_path)
-        layer_output = layers(layer3_out, layer4_out, layer7_out, num_classes)     
-        logits, cross_entropy_loss, training_operation = optimize(layer_output, correct_label, learning_rate, num_classes)
-        
+        layer_output = layers(layer3_out, layer4_out, layer7_out, num_classes)
+        logits, cross_entropy_loss, train_op = optimize(layer_output, correct_label, learning_rate, num_classes)
+
         # Train NN using the train_nn function
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
              correct_label, keep_prob, learning_rate)
