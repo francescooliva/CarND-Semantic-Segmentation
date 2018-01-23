@@ -1,6 +1,9 @@
 # Semantic Segmentation
 ### Introduction
-In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+In this project the pixels of a road in images are labelled using a Fully Convolutional Network (FCN) starting with transfer learning using a VGG16 model pretrained on Imagenet dataset.  
+The network architecture is based on the FCN-8s discussed in the paper [Fully Convolutional Networks for Semantic Segmentation](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf), trying to replicate the encoding and subsequently the decoding part.
+![network architecture](/images/segnet_arch.png)
+
 
 ## SPECIFICATIONS MET
 
@@ -10,14 +13,7 @@ The function layers is implemented correctly.
 
 The function optimize is implemented correctly.  
 
-The function train_nn is implemented correctly. The loss of the network should be printed while the network is training.  
-
-
-### Neural Network Setup And Building
-
-### Neural Network Training
-
-
+The function train_nn is implemented correctly. The final loss of the network is 
 
 
 # Semantic Segmentation Instructions

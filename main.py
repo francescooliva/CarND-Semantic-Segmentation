@@ -52,13 +52,77 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    # TODO: Implement function
-    conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes,1, padding = 'same',
-                                kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    output = tf.layers.conv2d_transpose(conv_1x1, num_classes, 4, 2, padding = 'same',
-                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    # template functions
+    # conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes,1, padding = 'same',
+    #                        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    # output = tf.layers.conv2d_transpose(conv_1x1,
+    #                                       num_classes, 
+    #                                       4, 2, 
+    #                                        padding = 'same',                                
+    #                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    
+    rn_init = 1e-2
+    l2_reg = 1e-3
+    # Convolutional 1x1 to mantain space information.
+    conv_1x1_l7 = tf.layers.conv2d(vgg_layer7_out,
+                                     num_classes,
+                                     1, # kernel_size
+                                     padding = 'same',
+                                     kernel_initializer = tf.random_normal_initializer(stddev=rn_init),
+                                     kernel_regularizer= tf.contrib.layers.l2_regularizer(l2_reg),
+                                     name='conv_1x1_l7')
+ 
+    # Upsample deconvolution x 2 of layer 7
+    upsamplex2 = tf.layers.conv2d_transpose(conv_1x1_l7,
+                                                  num_classes,
+                                                  4, # kernel_size
+                                                  strides= (2, 2),
+                                                  padding= 'same',
+                                                  kernel_initializer = tf.random_normal_initializer(stddev=rn_init),
+                                                  kernel_regularizer= tf.contrib.layers.l2_regularizer(l2_reg),
+                                                  name='upsamplex2')
+  
+    conv_1x1_l4 = tf.layers.conv2d(vgg_layer4_out,
+                                     num_classes,
+                                     1, # kernel_size
+                                     padding = 'same',
+                                     kernel_initializer = tf.random_normal_initializer(stddev=rn_init),
+                                     kernel_regularizer= tf.contrib.layers.l2_regularizer(l2_reg),
+                                     name='conv_1x1_l4')
 
-    return output
+    # adding skip connections to the model, combining(fusing) current layer and 4th pooling layer
+    # skip layer 1
+    skip_layer_1 = tf.add(upsamplex2, conv_1x1_l4, name='skip_layer_1')
+    
+    # Upsampling deconvolutions by 2 again.
+    upsamplex2_2 = tf.layers.conv2d_transpose(skip_layer_1,
+                                                   num_classes,
+                                                   4, # kernel_size
+                                                   strides= (2, 2),
+                                                   padding= 'same',
+                                                   kernel_initializer = tf.random_normal_initializer(stddev=rn_init),
+                                                   kernel_regularizer= tf.contrib.layers.l2_regularizer(l2_reg),
+
+                                                   name='upsamplex2_2')
+    conv_1x1_l3 = tf.layers.conv2d(vgg_layer3_out,
+                                     num_classes,
+                                     1, # kernel_size
+                                     padding = 'same',
+                                     kernel_initializer = tf.random_normal_initializer(stddev=rn_init),
+                                     kernel_regularizer= tf.contrib.layers.l2_regularizer(l2_reg),
+                                     name='conv_1x1_l3')
+ 
+    # We’ll repeat this once more with the third pooling layer output.
+    # skip layer 2
+    skip_layer_2 = tf.add(upsamplex2_2, conv_1x1_l3, name='skip_layer_2')
+    # Upsample deconvolution x 8.
+    upsamplex8 = tf.layers.conv2d_transpose(skip_layer_2, num_classes, 16,
+                                                  strides= (8, 8),
+                                                  padding= 'same',
+                                                  kernel_initializer = tf.random_normal_initializer(stddev=rn_init),
+                                                  kernel_regularizer= tf.contrib.layers.l2_regularizer(l2_reg),
+                                                  name='upsamplex8')
+    return upsamplex8_3
 tests.test_layers(layers)
 
 
@@ -74,8 +138,8 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # TODO: Implement function
 
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
-    labels = tf.reshape(correct_label, (-1,num_classes))
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = logits, labels = labels))
+    correct_label = tf.reshape(correct_label, (-1,num_classes))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = logits, labels = correct_label))
     optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
     training_operation = optimizer.minimize(cross_entropy_loss)
     return logits, training_operation, cross_entropy_loss
@@ -102,12 +166,15 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     print("Training...")
     print()
     sess.run(tf.global_variables_initializer())
+    print("Global variables initialized...")
 
     # TODO: Implement function
     for epoch in range(epochs):
         for image, label in get_batches_fn(batch_size):
-            sess.run([train_op, cross_entropy_loss],
-                feed_dict={input_image: image, correct_label: label, keep_prob: 0.6, learning_rate: 0.001})
+            _, loss = sess.run([train_op, cross_entropy_loss],
+                feed_dict={input_image: image, correct_label: label, keep_prob: 0.5, learning_rate: 0.00001})
+        print("EPOCH {} ...".format(epoch + 1))
+        print("LOSS = {:.3f}".format(loss))
 
 tests.test_train_nn(train_nn)
 
@@ -119,12 +186,7 @@ def run():
     runs_dir = './runs'
     tests.test_for_kitti_dataset(data_dir)
 
-    learning_rate = 0.0001
-    epochs = 20
-    batch_size = 10
-    correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
-    
-    
+
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
 
@@ -133,6 +195,11 @@ def run():
     #  https://www.cityscapes-dataset.com/
 
     with tf.Session() as sess:
+        epochs = 25
+        batch_size = 1
+        # TF placeholders
+        correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
+        learning_rate = tf.placeholder(tf.float32, name='learning_rate')
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
         # Create function to get batches
