@@ -5,15 +5,6 @@ The network architecture is based on the FCN-8s discussed in the paper [Fully Co
 ![network architecture](/images/segnet_arch.png)
 
 
-## SPECIFICATIONS MET
-
-The function load_vgg is implemented correctly.  
-
-The function layers is implemented correctly.  
-
-The function optimize is implemented correctly.  
-
-The function train_nn is implemented correctly. The final loss of the network is 
 
 
 # Semantic Segmentation Instructions
