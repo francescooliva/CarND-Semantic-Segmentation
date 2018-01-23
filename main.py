@@ -122,7 +122,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                                   kernel_initializer = tf.random_normal_initializer(stddev=rn_init),
                                                   kernel_regularizer= tf.contrib.layers.l2_regularizer(l2_reg),
                                                   name='upsamplex8')
-    return upsamplex8_3
+    return upsamplex8
 tests.test_layers(layers)
 
 
